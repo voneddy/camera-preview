@@ -258,28 +258,38 @@ public class CameraPreview: CAPPlugin {
     }
 
     @objc func startRecordVideo(_ call: CAPPluginCall) {
-        DispatchQueue.main.async {
-
-            let quality: Int? = call.getInt("quality", 85)
-
-            self.cameraController.captureVideo { (image, error) in
-
-                guard let image = image else {
-                    print(error ?? "Image capture error")
-                    guard let error = error else {
-                        call.reject("Image capture error")
-                        return
-                    }
-                    call.reject(error.localizedDescription)
-                    return
-                }
-
-                // self.videoUrl = image
-
-                call.resolve(["value": image.absoluteString])
+        
+        AVCaptureDevice.requestAccess(for: .video, completionHandler: { (granted: Bool) in
+            guard granted else {
+                call.reject("permission failed")
+                return
             }
-        }
+
+            DispatchQueue.main.async {
+                if !(self.cameraController.captureSession?.isRunning ?? false) {
+                    call.reject("camera not already started")
+                } else {
+                        self.cameraController.captureVideo { (image, error) in
+
+                            guard let image = image else {
+                                print(error ?? "Image capture error")
+                                guard let error = error else {
+                                    call.reject("Image capture error")
+                                    return
+                                }
+                                call.reject(error.localizedDescription)
+                                return
+                            }
+
+                            // self.videoUrl = image
+
+                            call.resolve(["value": image.absoluteString])
+                    }
+                }
+            }
+        })
     }
+    
 
     @objc func stopRecordVideo(_ call: CAPPluginCall) {
 

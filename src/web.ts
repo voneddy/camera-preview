@@ -1,5 +1,6 @@
-import { WebPlugin } from '@capacitor/core';
-import {
+import { WebPlugin, registerWebPlugin } from '@capacitor/core';
+
+import type {
   CameraPreviewOptions,
   CameraPreviewPictureOptions,
   CameraPreviewPlugin,
@@ -22,7 +23,16 @@ export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
     });
   }
 
+  async startRecordVideo(): Promise<{ value: string }> {
+    return { value: 'no web yet...' };
+  }
+  async stopRecordVideo(): Promise<void> {
+    return;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/ban-types
   async start(options: CameraPreviewOptions): Promise<{}> {
+    // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
       await navigator.mediaDevices
         .getUserMedia({
@@ -64,7 +74,7 @@ export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
 
         parent.appendChild(videoElement);
 
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        if (navigator.mediaDevices?.getUserMedia) {
           const constraints: MediaStreamConstraints = {
             video: {
               width: { ideal: options.width },
@@ -98,15 +108,16 @@ export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
   }
 
   async stop(): Promise<any> {
-    const video = <HTMLVideoElement>document.getElementById('video');
+    const video = document.getElementById('video') as HTMLVideoElement;
     if (video) {
       video.pause();
 
       const st: any = video.srcObject;
       const tracks = st.getTracks();
 
-      for (var i = 0; i < tracks.length; i++) {
-        var track = tracks[i];
+      // eslint-disable-next-line @typescript-eslint/prefer-for-of
+      for (let i = 0; i < tracks.length; i++) {
+        const track = tracks[i];
         track.stop();
       }
       video.remove();
@@ -114,8 +125,8 @@ export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
   }
 
   async capture(options: CameraPreviewPictureOptions): Promise<any> {
-    return new Promise((resolve, _) => {
-      const video = <HTMLVideoElement>document.getElementById('video');
+    return new Promise((resolve) => {
+      const video = document.getElementById('video') as HTMLVideoElement;
       const canvas = document.createElement('canvas');
 
       // video.width = video.offsetWidth;
@@ -164,7 +175,7 @@ export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
   }
 
   async setOpacity(_options: CameraOpacityOptions): Promise<any> {
-    const video = <HTMLVideoElement>document.getElementById('video');
+    const video = document.getElementById('video') as HTMLVideoElement;
     if (!!video && !!_options['opacity']) {
       video.style.setProperty('opacity', _options['opacity'].toString());
     }
@@ -175,5 +186,4 @@ const CameraPreview = new CameraPreviewWeb();
 
 export { CameraPreview };
 
-import { registerWebPlugin } from '@capacitor/core';
 registerWebPlugin(CameraPreview);

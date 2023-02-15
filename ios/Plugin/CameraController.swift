@@ -19,6 +19,7 @@ class CameraController: NSObject {
 
     var dataOutput: AVCaptureVideoDataOutput?
     var photoOutput: AVCapturePhotoOutput?
+    var videoOutput: AVCaptureMovieFileOutput?
 
     var rearCamera: AVCaptureDevice?
     var rearCameraInput: AVCaptureDeviceInput?
@@ -29,7 +30,7 @@ class CameraController: NSObject {
     var photoCaptureCompletionBlock: ((UIImage?, Error?) -> Void)?
 
     var sampleBufferCaptureCompletionBlock: ((UIImage?, Error?) -> Void)?
-
+    var videoRecordCompletionBlock: ((URL?, Error?) -> Void)?
     var highResolutionOutput: Bool = false
 
     var audioDevice: AVCaptureDevice?
@@ -112,7 +113,30 @@ extension CameraController {
             if captureSession.canAddOutput(self.photoOutput!) { captureSession.addOutput(self.photoOutput!) }
             captureSession.startRunning()
         }
+        
+        func configureVideoOutput() throws {
+            guard let captureSession = self.captureSession else { throw CameraControllerError.captureSessionIsMissing }
+            self.videoOutput = AVCaptureMovieFileOutput();
+            
+            if captureSession.canAddOutput(self.videoOutput!) {
+                captureSession.addOutput(self.videoOutput!)
+            }
+            captureSession.startRunning()
 
+            captureSession.commitConfiguration()
+
+            /*
+            let queue = DispatchQueue(label: "VideoOutput", attributes: [])
+            self.v?.setSampleBufferDelegate(self, queue: queue)
+             */
+            let queue =  DispatchQueue(label: "mrousavy/VisionCamera.video",
+                                                               qos: .userInteractive,
+                                                               attributes: [],
+                                                               autoreleaseFrequency: .inherit,
+                                                               target: nil)
+            
+        }
+        
         func configureDataOutput() throws {
             guard let captureSession = self.captureSession else { throw CameraControllerError.captureSessionIsMissing }
 
@@ -138,7 +162,7 @@ extension CameraController {
                 try configureDeviceInputs()
                 try configurePhotoOutput()
                 try configureDataOutput()
-                // try configureVideoOutput()
+                try configureVideoOutput()
             } catch {
                 DispatchQueue.main.async {
                     completionHandler(error)
@@ -396,6 +420,7 @@ extension CameraController {
 
     }
 
+    
     func captureVideo(completion: @escaping (URL?, Error?) -> Void) {
         guard let captureSession = self.captureSession, captureSession.isRunning else {
             completion(nil, CameraControllerError.captureSessionIsMissing)
@@ -409,8 +434,8 @@ extension CameraController {
 
         let fileUrl = path.appendingPathComponent(fileName)
         try? FileManager.default.removeItem(at: fileUrl)
-        /*videoOutput!.startRecording(to: fileUrl, recordingDelegate: self)
-         self.videoRecordCompletionBlock = completion*/
+        videoOutput!.startRecording(to: fileUrl, recordingDelegate: self)
+        self.videoRecordCompletionBlock = completion
     }
 
     func stopRecording(completion: @escaping (Error?) -> Void) {
@@ -418,7 +443,7 @@ extension CameraController {
             completion(CameraControllerError.captureSessionIsMissing)
             return
         }
-        // self.videoOutput?.stopRecording()
+        self.videoOutput?.stopRecording()
     }
 }
 
@@ -639,10 +664,10 @@ extension UIImage {
 
 extension CameraController: AVCaptureFileOutputRecordingDelegate {
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
-        /*if error == nil {
+        if error == nil {
          self.videoRecordCompletionBlock?(outputFileURL, nil)
          } else {
          self.videoRecordCompletionBlock?(nil, error)
-         }*/
+         }
     }
 }
