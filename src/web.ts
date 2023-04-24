@@ -7,6 +7,7 @@ import type {
   CameraPreviewFlashMode,
   CameraSampleOptions,
   CameraOpacityOptions,
+  StabilizationType,
 } from './definitions';
 
 export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
@@ -29,6 +30,15 @@ export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
   async stopRecordVideo(): Promise<void> {
     return;
   }
+
+  async getStabilizationMode(): Promise<{ stabilizationMode: StabilizationType }> {
+    throw new Error('f off ')
+  }
+
+  async setStabilizationMode(options: { stabilizationMode: StabilizationType }): Promise<{ stabilizationMode: StabilizationType }> {
+    throw new Error('f off ' + options.stabilizationMode)
+  }
+
 
   // eslint-disable-next-line @typescript-eslint/ban-types
   async start(options: CameraPreviewOptions): Promise<{}> {

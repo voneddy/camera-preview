@@ -58,10 +58,13 @@ export interface CameraOpacityOptions {
   opacity?: number;
 }
 
+export type StabilizationType = 'off' | 'auto' | 'standard' | 'cinematic' | 'cinematicExtended';
 export interface CameraPreviewPlugin {
   start(options: CameraPreviewOptions): Promise<{}>;
   stop(): Promise<{}>;
-  capture(options: CameraPreviewPictureOptions): Promise<{ value: string }>;
+  capture(options: CameraPreviewPictureOptions): Promise<{ value: string, fileUrl: string }>;
+  setStabilizationMode(options: {stabilizationMode: StabilizationType }): Promise<{ stabilizationMode: StabilizationType }>;
+  getStabilizationMode(): Promise<{ stabilizationMode: StabilizationType }>;
   captureSample(options: CameraSampleOptions): Promise<{ value: string }>;
   getSupportedFlashModes(): Promise<{
     result: CameraPreviewFlashMode[];
