@@ -38,9 +38,28 @@ class CameraController: NSObject {
     var audioInput: AVCaptureDeviceInput?
     
     var zoomFactor: CGFloat = 1.0
+    
+    @objc var captureConnection: AVCaptureConnection?
+    var observation: NSKeyValueObservation? = nil
+    
+    public func obs() {
+        /*
+        if(observation != nil){
+            return;
+        }
+        
+        observation = observe(
+            \.captureConnection?.activeVideoStabilizationMode,
+             options: [.old, .new]
+        ) { object, change in
+            print("myDate changed from: \(change.oldValue!), updated to: \(change.newValue!)")
+        }
+        */
+    }
 }
 
 extension CameraController {
+    
     func prepare(cameraPosition: String, disableAudio: Bool, completionHandler: @escaping (Error?) -> Void) {
         func createCaptureSession() {
             self.captureSession = AVCaptureSession()
@@ -124,9 +143,8 @@ extension CameraController {
             if captureSession.canAddOutput(self.videoOutput!) {
                 captureSession.addOutput(self.videoOutput!)
             }
-            
+            try self.setStabalizationMode(mode:nil)
             captureSession.startRunning()
-            
             captureSession.commitConfiguration()
             
             /*
@@ -308,60 +326,23 @@ extension CameraController {
     }
     
     func getStabilizationMode() throws -> String? {
-        var captureConnection: AVCaptureConnection
-        guard let captureSession = self.captureSession, captureSession.isRunning else {
-            throw CameraControllerError.noCamerasAvailable
-        }
-        if #available(iOS 13.0, *) {
-            for connection in (captureSession.connections) {
-                for port in connection.inputPorts {
-                    if port.mediaType == AVMediaType.video {
-                        captureConnection = connection
-                        return "\(captureConnection.preferredVideoStabilizationMode.rawValue)"
-                    } else {
-                        return "videoOnly"
-                    }
-                }
+        // var captureConnection: AVCaptureConnection
+        if let connection = videoOutput?.connection(with: .video) {
+            if connection.isVideoStabilizationSupported {
+                captureConnection = connection
+                return "\(connection.activeVideoStabilizationMode.rawValue)"
             }
-        } else {
-            // put in warning pop up if stabilization not available
-            print("#available >= ios 13")
-            return "unAvailable"
         }
         return "notFound"
     }
     
-    func setStabalizationMode(mode: AVCaptureVideoStabilizationMode) throws -> Bool {
-        var captureConnection: AVCaptureConnection
-        guard let captureSession = self.captureSession, captureSession.isRunning else {
-            throw CameraControllerError.noCamerasAvailable
-        }
-        if #available(iOS 13.0, *) {
-            for connection in (captureSession.connections) {
-                for port in connection.inputPorts {
-                    if port.mediaType == AVMediaType.video {
-                        captureConnection = connection
-                        captureConnection.preferredVideoStabilizationMode = mode
-                        
-                        print("capture connection from within startStabilization is \(String(describing: captureConnection))")
-                        
-                        print("preferred video stab mode set to on")
-                        
-                        let currentStabMode = captureConnection.activeVideoStabilizationMode.rawValue
-                        print("active stabilization mode from startStabilization is \(currentStabMode)")
-                        
-                        return true
-                    } else {
-                        print("Video only")
-                        return false
-                    }
-                }
+    func setStabalizationMode(mode: AVCaptureVideoStabilizationMode?) throws -> Bool {
+        if let connection = videoOutput?.connection(with: .video) {
+            if connection.isVideoStabilizationSupported {
+                captureConnection = connection
+                connection.preferredVideoStabilizationMode = .standard
+                print("connection.activeVideoStabilizationMode \(connection.activeVideoStabilizationMode.rawValue)")
             }
-        } else {
-            
-            // put in warning pop up if stabilization not available
-            print("#available >= ios 13")
-            return false
         }
         return false
     }
