@@ -255,7 +255,8 @@ public class CameraPreview: CAPPlugin {
             
             if modeAsEnum != nil {
                 let success = try self.cameraController.setStabalizationMode(mode: modeAsEnum!)
-                call.resolve(["stabalizationMode": success])
+                // self.cameraController.obs()
+                call.resolve(["stabilizationMode": success])
                 return
             } else {
                 call.reject("stabalizationMode not supported")
