@@ -44,21 +44,76 @@ class CameraController: NSObject {
     
     public func obs() {
         /*
-        if(observation != nil){
-            return;
-        }
-        
-        observation = observe(
-            \.captureConnection?.activeVideoStabilizationMode,
-             options: [.old, .new]
-        ) { object, change in
-            print("myDate changed from: \(change.oldValue!), updated to: \(change.newValue!)")
-        }
-        */
+         if(observation != nil){
+         return;
+         }
+         
+         observation = observe(
+         \.captureConnection?.activeVideoStabilizationMode,
+         options: [.old, .new]
+         ) { object, change in
+         print("myDate changed from: \(change.oldValue!), updated to: \(change.newValue!)")
+         }
+         */
     }
 }
 
 extension CameraController {
+    
+    func configureCameraForHighestFrameRate(device: AVCaptureDevice) {
+        
+        var bestFormat: AVCaptureDevice.Format?
+        var bestFrameRateRange: AVFrameRateRange?
+        
+        for format in device.formats {
+            print(format.formatDescription)
+            for range in format.videoSupportedFrameRateRanges {
+                if range.maxFrameRate > bestFrameRateRange?.maxFrameRate ?? 0 {
+                    bestFormat = format
+                    bestFrameRateRange = range //  1920 x 1080
+                }
+            }
+        }
+        
+        print("maxFrameRate found \(bestFrameRateRange?.maxFrameRate)")
+        
+        if let bestFormat = bestFormat,
+           let bestFrameRateRange = bestFrameRateRange {
+            do {
+                try device.lockForConfiguration()
+                
+                // Set the device's active format.
+                device.activeFormat = bestFormat
+                // Set the device's min/max frame duration.
+                let duration = bestFrameRateRange.minFrameDuration
+                device.activeVideoMinFrameDuration = duration
+                device.activeVideoMaxFrameDuration = duration
+                
+                device.unlockForConfiguration()
+            } catch {
+                // Handle error.
+            }
+        }
+        print("activeFormat found \(device.activeFormat)")
+    }
+    
+    func getCurrentDevice() throws -> AVCaptureDevice {
+        
+        var currentCamera: AVCaptureDevice?
+        switch currentCameraPosition {
+        case .front:
+            currentCamera = self.frontCamera!
+        case .rear:
+            currentCamera = self.rearCamera!
+        default: break
+        }
+        
+        guard let device = currentCamera else {
+            throw CameraControllerError.noCamerasAvailable
+        }
+        
+        return device
+    }
     
     func prepare(cameraPosition: String, disableAudio: Bool, completionHandler: @escaping (Error?) -> Void) {
         func createCaptureSession() {
@@ -97,8 +152,8 @@ extension CameraController {
                 if let rearCamera = self.rearCamera {
                     self.rearCameraInput = try AVCaptureDeviceInput(device: rearCamera)
                     
-                    if captureSession.canAddInput(self.rearCameraInput!) { captureSession.addInput(self.rearCameraInput!) }
-                    
+                    if captureSession.canAddInput(self.rearCameraInput!) { captureSession.addInput(self.rearCameraInput!)
+                    }
                     self.currentCameraPosition = .rear
                 }
             } else if cameraPosition == "front" {
@@ -143,6 +198,20 @@ extension CameraController {
             if captureSession.canAddOutput(self.videoOutput!) {
                 captureSession.addOutput(self.videoOutput!)
             }
+            
+            do {
+                if self.videoOutput != nil && self.videoOutput!.availableVideoCodecTypes.contains(.h264),
+                   let connection = self.videoOutput?.connection(with: .video) {
+                    // Use the H.264 codec to encode the video.
+                    self.videoOutput?.setOutputSettings([
+                        AVVideoCodecKey: AVVideoCodecType.h264,
+                        AVVideoCompressionPropertiesKey: [AVVideoProfileLevelKey: AVVideoProfileLevelH264High41]
+                    ], for: connection)
+                }
+            } catch {
+                print("OutputSettings error \(error)")
+            }
+            
             try self.setStabalizationMode(mode:nil)
             captureSession.startRunning()
             captureSession.commitConfiguration()
@@ -392,6 +461,39 @@ extension CameraController {
         return supportedFlashModesAsStrings
     }
     
+    @available(iOS 15.0, *)
+    func showSystemUserInterface() throws {
+        AVCaptureDevice.showSystemUserInterface(.videoEffects)
+        let device = try self.getCurrentDevice()
+    }
+    
+    func setLowLightBoost(enable: Bool) throws -> Bool {
+        
+        let device = try self.getCurrentDevice()
+        do {
+            
+            if device.isLowLightBoostEnabled && enable {
+                return true
+            }
+            
+            if device.isLowLightBoostSupported {
+                try device.lockForConfiguration()
+                
+                device.automaticallyEnablesLowLightBoostWhenAvailable = enable
+                
+                device.unlockForConfiguration()
+                
+            } else {
+                return false
+            }
+            
+        } catch {
+            throw CameraControllerError.invalidOperation
+        }
+        
+        return device.isLowLightBoostEnabled
+    }
+    
     func setFlashMode(flashMode: AVCaptureDevice.FlashMode) throws {
         var currentCamera: AVCaptureDevice?
         switch currentCameraPosition {
@@ -465,7 +567,7 @@ extension CameraController {
     }
     
     
-    func captureVideo(completion: @escaping (URL?, Error?) -> Void) {
+    func captureVideo(completion: @escaping (URL?, Error?) -> Void) throws {
         guard let captureSession = self.captureSession, captureSession.isRunning else {
             completion(nil, CameraControllerError.captureSessionIsMissing)
             return
@@ -474,10 +576,11 @@ extension CameraController {
         let identifier = UUID()
         let randomIdentifier = identifier.uuidString.replacingOccurrences(of: "-", with: "")
         let finalIdentifier = String(randomIdentifier.prefix(8))
-        let fileName="cpcp_video_"+finalIdentifier+".mp4"
+        let fileName="cpcp_video_" + finalIdentifier + ".mp4"
         
         let fileUrl = path.appendingPathComponent(fileName)
         try? FileManager.default.removeItem(at: fileUrl)
+        // self.configureCameraForHighestFrameRate(device: try self.getCurrentDevice())
         videoOutput!.startRecording(to: fileUrl, recordingDelegate: self)
         self.videoRecordCompletionBlock = completion
     }
@@ -523,8 +626,7 @@ extension CameraController: UIGestureRecognizerDelegate {
         }
     }
     
-    @objc
-    private func handlePinch(_ pinch: UIPinchGestureRecognizer) {
+    @objc private func handlePinch(_ pinch: UIPinchGestureRecognizer) {
         guard let device = self.currentCameraPosition == .rear ? rearCamera : frontCamera else { return }
         
         func minMaxZoom(_ factor: CGFloat) -> CGFloat { return max(1.0, min(factor, device.activeFormat.videoMaxZoomFactor)) }

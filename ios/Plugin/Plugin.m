@@ -15,4 +15,6 @@ CAP_PLUGIN(CameraPreview, "CameraPreview",
            CAP_PLUGIN_METHOD(stopRecordVideo, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(setStabilizationMode, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(getStabilizationMode, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(showSystemUserInterface, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(setLowLightBoost, CAPPluginReturnPromise);
 )

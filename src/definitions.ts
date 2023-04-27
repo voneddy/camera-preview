@@ -65,6 +65,8 @@ export interface CameraPreviewPlugin {
   capture(options: CameraPreviewPictureOptions): Promise<{ value: string, fileUrl: string }>;
   setStabilizationMode(options: {stabilizationMode: StabilizationType }): Promise<{ stabilizationMode: StabilizationType }>;
   getStabilizationMode(): Promise<{ stabilizationMode: StabilizationType }>;
+  setLowLightBoost(options: {enable: boolean }): Promise<{ enabled: boolean }>;
+  showSystemUserInterface(): Promise<void>;
   captureSample(options: CameraSampleOptions): Promise<{ value: string }>;
   getSupportedFlashModes(): Promise<{
     result: CameraPreviewFlashMode[];

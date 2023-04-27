@@ -32,13 +32,19 @@ export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
   }
 
   async getStabilizationMode(): Promise<{ stabilizationMode: StabilizationType }> {
-    throw new Error('f off ')
+    throw new Error('No web implementation')
   }
 
   async setStabilizationMode(options: { stabilizationMode: StabilizationType }): Promise<{ stabilizationMode: StabilizationType }> {
-    throw new Error('f off ' + options.stabilizationMode)
+    throw new Error('No web implementation ' + options.stabilizationMode)
   }
 
+  async setLowLightBoost(options: {enable: boolean }): Promise<{ enabled: boolean }>{
+    throw new Error('No web implementation ' + options.enable)
+  }
+  async showSystemUserInterface(): Promise<void>{
+    throw new Error('No web implementation')
+  }
 
   // eslint-disable-next-line @typescript-eslint/ban-types
   async start(options: CameraPreviewOptions): Promise<{}> {

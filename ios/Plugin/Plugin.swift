@@ -291,6 +291,31 @@ public class CameraPreview: CAPPlugin {
         }
     }
     
+    @available(iOS 15.0, *)
+    @objc func showSystemUserInterface(_ call: CAPPluginCall) {
+        do {
+            // let enabled =
+            try self.cameraController.showSystemUserInterface()
+            call.resolve(["done": true])
+        } catch {
+            call.reject("failed to showSystemUserInterface")
+        }
+    }
+    
+    
+    @objc func setLowLightBoost(_ call: CAPPluginCall) {
+        guard let enable = call.getBool("enable") else {
+            call.reject("failed to set low light boost. required parameter enable is missing")
+            return
+        }
+        do {
+            let enabled = try self.cameraController.setLowLightBoost(enable: enable)
+            call.resolve(["enabled": enabled])
+        } catch {
+            call.reject("failed to set low light boost")
+        }
+    }
+    
     
     @objc func setFlashMode(_ call: CAPPluginCall) {
         guard let flashMode = call.getString("flashMode") else {
@@ -334,21 +359,25 @@ public class CameraPreview: CAPPlugin {
                 if !(self.cameraController.captureSession?.isRunning ?? false) {
                     call.reject("camera not already started")
                 } else {
-                    self.cameraController.captureVideo { (image, error) in
-                        
-                        guard let image = image else {
-                            print(error ?? "Image capture error")
-                            guard let error = error else {
-                                call.reject("Image capture error")
+                    do {
+                        try self.cameraController.captureVideo { (image, error) in
+                            
+                            guard let image = image else {
+                                print(error ?? "Image capture error")
+                                guard let error = error else {
+                                    call.reject("Image capture error")
+                                    return
+                                }
+                                call.reject(error.localizedDescription)
                                 return
                             }
-                            call.reject(error.localizedDescription)
-                            return
+                            
+                            // self.videoUrl = image
+                            
+                            call.resolve(["value": image.absoluteString])
                         }
-                        
-                        // self.videoUrl = image
-                        
-                        call.resolve(["value": image.absoluteString])
+                    } catch {
+                        call.reject(error.localizedDescription)
                     }
                 }
             }
