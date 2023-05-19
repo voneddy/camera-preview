@@ -8,7 +8,7 @@ import AVFoundation
 @objc(CameraPreview)
 public class CameraPreview: CAPPlugin {
     
-    var previewView: UIView!
+    var previewView: UIView?
     var cameraPosition = String()
     let cameraController = CameraController()
     var x: CGFloat?
@@ -27,15 +27,25 @@ public class CameraPreview: CAPPlugin {
         let height = self.paddingBottom != nil ? self.height! - self.paddingBottom!: self.height!;
         
         if UIApplication.shared.statusBarOrientation.isLandscape {
-            self.previewView.frame = CGRect(x: self.y!, y: self.x!, width: max(height, self.width!), height: min(height, self.width!))
-            self.cameraController.previewLayer?.frame = self.previewView.frame
+            self.previewView?.frame = CGRect(x: self.y!, y: self.x!, width: max(height, self.width!), height: min(height, self.width!))
+            
+            guard let frame = self.previewView?.frame else {
+                return;
+            }
+            
+            self.cameraController.previewLayer?.frame = frame
         }
         
         if UIApplication.shared.statusBarOrientation.isPortrait {
             if (self.previewView != nil && self.x != nil && self.y != nil && self.width != nil && self.height != nil) {
-                self.previewView.frame = CGRect(x: self.x!, y: self.y!, width: min(height, self.width!), height: max(height, self.width!))
+                self.previewView?.frame = CGRect(x: self.x!, y: self.y!, width: min(height, self.width!), height: max(height, self.width!))
             }
-            self.cameraController.previewLayer?.frame = self.previewView.frame
+            
+            guard let frame = self.previewView?.frame else {
+                return;
+            }
+            
+            self.cameraController.previewLayer?.frame = frame
         }
         
         cameraController.updateVideoOrientation()
@@ -84,19 +94,27 @@ public class CameraPreview: CAPPlugin {
                             call.reject(error.localizedDescription)
                             return
                         }
+                        
+                        
                         let height = self.paddingBottom != nil ? self.height! - self.paddingBottom!: self.height!
                         self.previewView = UIView(frame: CGRect(x: self.x ?? 0, y: self.y ?? 0, width: self.width!, height: height))
                         self.webView?.isOpaque = false
                         self.webView?.backgroundColor = UIColor.clear
                         self.webView?.scrollView.backgroundColor = UIColor.clear
-                        self.webView?.superview?.addSubview(self.previewView)
+                        
+                        guard let previewView = self.previewView else {
+                            call.reject("!previewView")
+                            return;
+                        }
+                        
+                        self.webView?.superview?.addSubview(previewView)
                         if self.toBack! {
                             self.webView?.superview?.bringSubviewToFront(self.webView!)
                         }
-                        try? self.cameraController.displayPreview(on: self.previewView)
+                        try? self.cameraController.displayPreview(on: previewView)
                         
-                        let frontView = self.toBack! ? self.webView : self.previewView
-                        self.cameraController.setupGestures(target: frontView ?? self.previewView, enableZoom: self.enableZoom!)
+                        let frontView = self.toBack! ? self.webView : previewView
+                        self.cameraController.setupGestures(target: frontView ?? previewView, enableZoom: self.enableZoom!)
                         
                         if self.rotateWhenOrientationChanged == true {
                             NotificationCenter.default.addObserver(self, selector: #selector(CameraPreview.rotated), name: UIDevice.orientationDidChangeNotification, object: nil)
@@ -124,7 +142,7 @@ public class CameraPreview: CAPPlugin {
         DispatchQueue.main.async {
             if self.cameraController.captureSession?.isRunning ?? false {
                 self.cameraController.captureSession?.stopRunning()
-                self.previewView.removeFromSuperview()
+                self.previewView?.removeFromSuperview()
                 self.webView?.isOpaque = true
                 call.resolve()
             } else {

@@ -1,6 +1,6 @@
 {
   "name": "@capacitor-community/camera-preview",
-  "version": "4.1.5",
+  "version": "4.1.6",
   "description": "Camera preview",
   "main": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
