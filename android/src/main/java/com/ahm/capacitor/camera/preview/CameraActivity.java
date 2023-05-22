@@ -1,5 +1,6 @@
 package com.ahm.capacitor.camera.preview;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
@@ -36,6 +37,8 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
+
+import androidx.core.app.ActivityCompat;
 import androidx.exifinterface.media.ExifInterface;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -115,6 +118,10 @@ public class CameraActivity extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         appResourcesPackage = getActivity().getPackageName();
+
+        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(getActivity(), new String[] { Manifest.permission.RECORD_AUDIO }, 10);
+        }
 
         // Inflate the layout for this fragment
         view = inflater.inflate(getResources().getIdentifier("camera_activity", "layout", appResourcesPackage), container, false);
@@ -864,7 +871,9 @@ public class CameraActivity extends Fragment {
                 }
             }
 
-            mRecorder.setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION);
+            if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                mRecorder.setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION);
+            }
             mRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
             mRecorder.setProfile(profile);
             mRecorder.setOutputFile(filePath);
