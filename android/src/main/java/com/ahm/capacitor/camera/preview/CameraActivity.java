@@ -118,11 +118,6 @@ public class CameraActivity extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         appResourcesPackage = getActivity().getPackageName();
-
-        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(getActivity(), new String[] { Manifest.permission.RECORD_AUDIO }, 10);
-        }
-
         // Inflate the layout for this fragment
         view = inflater.inflate(getResources().getIdentifier("camera_activity", "layout", appResourcesPackage), container, false);
         createCameraPreview();
@@ -160,6 +155,10 @@ public class CameraActivity extends Fragment {
                 this.setupTouchAndBackButton();
             }
         }
+
+      if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+        ActivityCompat.requestPermissions(getActivity(), new String[] { Manifest.permission.RECORD_AUDIO }, 10);
+      }
     }
 
     private void setupTouchAndBackButton() {
@@ -870,12 +869,17 @@ public class CameraActivity extends Fragment {
                     }
                 }
             }
-
-            if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                mRecorder.setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION);
-            }
             mRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-            mRecorder.setProfile(profile);
+            if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+              mRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+              mRecorder.setVideoFrameRate(profile.videoFrameRate);
+              mRecorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight);
+              mRecorder.setVideoEncodingBitRate(profile.videoBitRate);
+              mRecorder.setVideoEncoder(profile.videoCodec);
+            } else {
+              mRecorder.setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION);
+              mRecorder.setProfile(profile);
+            }
             mRecorder.setOutputFile(filePath);
             mRecorder.setOrientationHint(mOrientationHint);
             mRecorder.setMaxDuration(maxDuration);
