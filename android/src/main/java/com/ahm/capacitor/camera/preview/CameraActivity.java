@@ -858,7 +858,7 @@ public class CameraActivity extends Fragment {
             if (false && CamcorderProfile.hasProfile(defaultCameraId, CamcorderProfile.QUALITY_HIGH)) {
                 profile = CamcorderProfile.get(defaultCameraId, CamcorderProfile.QUALITY_HIGH);
             } else {
-                if (CamcorderProfile.hasProfile(defaultCameraId, CamcorderProfile.QUALITY_1080P)) {
+                if (false && CamcorderProfile.hasProfile(defaultCameraId, CamcorderProfile.QUALITY_1080P)) {
                     profile = CamcorderProfile.get(defaultCameraId, CamcorderProfile.QUALITY_1080P);
                 } else {
                     if (CamcorderProfile.hasProfile(defaultCameraId, CamcorderProfile.QUALITY_720P)) {
