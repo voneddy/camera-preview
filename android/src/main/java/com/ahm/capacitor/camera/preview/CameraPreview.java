@@ -127,8 +127,8 @@ public class CameraPreview extends Plugin implements CameraActivity.CameraPrevie
                     public void run() {
                         FrameLayout containerView = getBridge().getActivity().findViewById(containerViewId);
 
-                        // allow orientation changes after closing camera:
-                        getBridge().getActivity().setRequestedOrientation(previousOrientationRequest);
+                        // disallow orientation changes after closing camera:
+                        getBridge().getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
                         if (containerView != null) {
                             ((ViewGroup) getBridge().getWebView().getParent()).removeView(containerView);

@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -117,11 +118,11 @@ public class CameraActivity extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        appResourcesPackage = getActivity().getPackageName();
-        // Inflate the layout for this fragment
-        view = inflater.inflate(getResources().getIdentifier("camera_activity", "layout", appResourcesPackage), container, false);
-        createCameraPreview();
-        return view;
+      appResourcesPackage = getActivity().getPackageName();
+       // Inflate the layout for this fragment
+      view = inflater.inflate(getResources().getIdentifier("camera_activity", "layout", appResourcesPackage), container, false);
+      createCameraPreview();
+      return view;
     }
 
     public void setRect(int x, int y, int width, int height) {
@@ -159,6 +160,8 @@ public class CameraActivity extends Fragment {
       if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
         ActivityCompat.requestPermissions(getActivity(), new String[] { Manifest.permission.RECORD_AUDIO }, 10);
       }
+      getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+      getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
     }
 
     private void setupTouchAndBackButton() {
@@ -397,6 +400,7 @@ public class CameraActivity extends Fragment {
         }
     }
 
+    /*
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
@@ -427,9 +431,8 @@ public class CameraActivity extends Fragment {
             mPreview.setCameraDisplayOrientation();
 
         }
-
     }
-
+    */
 
     public Camera getCamera() {
         return mCamera;
@@ -487,7 +490,6 @@ public class CameraActivity extends Fragment {
 
     public void setCameraParameters(Camera.Parameters params) {
         cameraParameters = params;
-
         if (mCamera != null && cameraParameters != null) {
             mCamera.setParameters(cameraParameters);
         }
@@ -805,7 +807,7 @@ public class CameraActivity extends Fragment {
                     } else {
                         params.setRotation(mPreview.getDisplayOrientation());
                     }
-
+                    params.set("orientation", "portrait");
                     mCamera.setParameters(params);
                     mCamera.takePicture(shutterCallback, null, jpegPictureCallback);
                 }
@@ -840,6 +842,7 @@ public class CameraActivity extends Fragment {
 
         Camera.Parameters cameraParams = mCamera.getParameters();
         if (withFlash) {
+            cameraParams.set("orientation", "portrait");
             cameraParams.setFlashMode(withFlash ? Camera.Parameters.FLASH_MODE_TORCH : Camera.Parameters.FLASH_MODE_OFF);
             mCamera.setParameters(cameraParams);
             mCamera.startPreview();
@@ -852,17 +855,17 @@ public class CameraActivity extends Fragment {
             mRecorder.setCamera(mCamera);
 
             CamcorderProfile profile;
-            if (CamcorderProfile.hasProfile(defaultCameraId, CamcorderProfile.QUALITY_HIGH)) {
+            if (false && CamcorderProfile.hasProfile(defaultCameraId, CamcorderProfile.QUALITY_HIGH)) {
                 profile = CamcorderProfile.get(defaultCameraId, CamcorderProfile.QUALITY_HIGH);
             } else {
-                if (CamcorderProfile.hasProfile(defaultCameraId, CamcorderProfile.QUALITY_480P)) {
-                    profile = CamcorderProfile.get(defaultCameraId, CamcorderProfile.QUALITY_480P);
+                if (CamcorderProfile.hasProfile(defaultCameraId, CamcorderProfile.QUALITY_1080P)) {
+                    profile = CamcorderProfile.get(defaultCameraId, CamcorderProfile.QUALITY_1080P);
                 } else {
                     if (CamcorderProfile.hasProfile(defaultCameraId, CamcorderProfile.QUALITY_720P)) {
                         profile = CamcorderProfile.get(defaultCameraId, CamcorderProfile.QUALITY_720P);
                     } else {
-                        if (CamcorderProfile.hasProfile(defaultCameraId, CamcorderProfile.QUALITY_1080P)) {
-                            profile = CamcorderProfile.get(defaultCameraId, CamcorderProfile.QUALITY_1080P);
+                        if (CamcorderProfile.hasProfile(defaultCameraId, CamcorderProfile.QUALITY_480P)) {
+                          profile = CamcorderProfile.get(defaultCameraId, CamcorderProfile.QUALITY_480P);
                         } else {
                             profile = CamcorderProfile.get(defaultCameraId, CamcorderProfile.QUALITY_LOW);
                         }
@@ -944,6 +947,7 @@ public class CameraActivity extends Fragment {
             mCamera.lock();
             Camera.Parameters cameraParams = mCamera.getParameters();
             cameraParams.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+            cameraParams.set("orientation", "portrait");
             mCamera.setParameters(cameraParams);
             mCamera.startPreview();
             eventListener.onStopRecordVideo(this.recordFilePath);
@@ -973,6 +977,8 @@ public class CameraActivity extends Fragment {
             }
 
             try {
+
+                parameters.set("orientation", "portrait");
                 setCameraParameters(parameters);
                 mCamera.autoFocus(callback);
             } catch (Exception e) {
